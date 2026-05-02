@@ -69,7 +69,7 @@ export function HomeClient() {
                 className="inline-flex items-center gap-2 rounded-full border border-neutral-400/80 bg-neutral-100/95 px-4 py-2 text-sm text-neutral-800 shadow-md shadow-neutral-900/10 backdrop-blur-sm transition hover:bg-white active:scale-[0.98]"
               >
                 <UploadGlyph className="h-4 w-4 shrink-0" aria-hidden />
-                내 이미지 업로드하기
+                내 이미지로 멍때리기
               </button>
               <input
                 ref={fileRef}
