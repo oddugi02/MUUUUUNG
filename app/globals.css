@@ -1,0 +1,118 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 확장 디스크 — 레퍼런스처럼 동심원 전체 원판이 겹치는 구성 */
+@keyframes portal-ring {
+  0% {
+    opacity: 0.7;
+    transform: scale(var(--portal-ring-start, 0.26));
+    animation-timing-function: cubic-bezier(0.45, 0.05, 0.25, 1);
+  }
+  30% {
+    opacity: 1;
+    animation-timing-function: cubic-bezier(0.2, 0.06, 0.18, 1);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(var(--portal-ring-end, 2.15));
+  }
+}
+
+/* 확장 끝난 디스크 제거 직전 페이드아웃 — 스케일은 유지 */
+@keyframes portal-ring-fade-out {
+  from {
+    opacity: 1;
+    transform: scale(var(--portal-ring-end, 2.15));
+  }
+  to {
+    opacity: 0;
+    transform: scale(var(--portal-ring-end, 2.15));
+  }
+}
+
+.portal-ring-exiting {
+  animation: portal-ring-fade-out var(--portal-fade-ms, 480ms) ease-out forwards !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .portal-ring-layer {
+    animation: none !important;
+    opacity: 0;
+    visibility: hidden;
+  }
+
+  .portal-ring-layer:first-of-type {
+    opacity: 1;
+    visibility: visible;
+    transform: scale(var(--portal-ring-end, 2.15));
+  }
+}
+
+:root {
+  /* 고정 중앙·터널 디스크 공통 — 부드러운 원형 (레퍼런스 같은 단일 원판 마스크) */
+  --portal-mask-center: radial-gradient(
+    circle at center,
+    #000 56%,
+    rgba(0, 0, 0, 0.93) 62%,
+    rgba(0, 0, 0, 0.35) 69%,
+    transparent 73%
+  );
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  @apply bg-neutral-200 text-neutral-900 antialiased;
+}
+
+.portal-mask-center {
+  -webkit-mask-image: var(--portal-mask-center);
+  mask-image: var(--portal-mask-center);
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+}
+
+/* 터널 확장층 — 도넛이 아니라 레퍼런스와 동일한 ‘완전 원형’ 디스크 */
+.portal-mask-disc {
+  -webkit-mask-image: var(--portal-mask-center);
+  mask-image: var(--portal-mask-center);
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+}
+
+/* Retro stepped / pixel-ish frame */
+.timer-frame {
+  background: rgba(245, 245, 245, 0.92);
+  box-shadow:
+    0 0 0 2px #000,
+    0 0 0 4px #fff,
+    0 0 0 6px #000,
+    0 0 0 8px #fff,
+    0 0 0 10px #000;
+  clip-path: polygon(
+    0 4px,
+    4px 4px,
+    4px 0,
+    calc(100% - 4px) 0,
+    calc(100% - 4px) 4px,
+    100% 4px,
+    100% calc(100% - 4px),
+    calc(100% - 4px) calc(100% - 4px),
+    calc(100% - 4px) 100%,
+    4px 100%,
+    4px calc(100% - 4px),
+    0 calc(100% - 4px)
+  );
+}
