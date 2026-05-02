@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PortalTunnel } from "./PortalTunnel";
 
-const DEMO_SRC = "/demo.png";
+const DEMO_SRC = `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/demo.png`;
 
 export function HomeClient() {
   const [customObjectUrl, setCustomObjectUrl] = useState<string | null>(null);
