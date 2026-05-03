@@ -38,10 +38,28 @@ export function HomeClient() {
   const mungBrand = useMemo(() => mungWord(mungLevel), [mungLevel]);
 
   useEffect(() => {
-    const id = window.setInterval(() => {
-      setSeconds((s) => s + 1);
-    }, 1000);
-    return () => window.clearInterval(id);
+    let id: number | null = null;
+    const start = () => {
+      if (id !== null) return;
+      id = window.setInterval(() => {
+        setSeconds((s) => s + 1);
+      }, 1000);
+    };
+    const stop = () => {
+      if (id === null) return;
+      window.clearInterval(id);
+      id = null;
+    };
+    const onVisibility = () => {
+      if (document.hidden) stop();
+      else start();
+    };
+    if (!document.hidden) start();
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      stop();
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
   }, []);
 
   const revokeIfNeeded = useCallback(() => {

@@ -35,6 +35,11 @@
   animation: portal-ring-fade-out var(--portal-fade-ms, 480ms) ease-out forwards !important;
 }
 
+/* 탭이 백그라운드일 때 확장 링 GPU 비용 절감 */
+.portal-tunnel-paused .portal-ring-layer {
+  animation-play-state: paused !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .portal-ring-layer {
     animation: none !important;
