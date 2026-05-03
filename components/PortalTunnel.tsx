@@ -1,16 +1,13 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
-
-/** 시작 → 화면 끝까지 (기존 대비 약 2배 느리게) */
-const RING_EXPAND_SEC = 30;
-/** 다음 디스크가 확장을 시작하기까지 */
-const RING_STAGGER_MS = 2000;
-/** 페이드아웃 후 DOM 제거까지 (CSS --portal-fade-ms 와 동일 권장) */
-const RING_FADE_OUT_MS = 480;
-
-/** 고정 중앙(w-[30%] 기준)보다 살짝 작은 디스크에서 확장 시작 */
-const RING_START = 0.26;
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import type { PortalMaskShape } from "@/lib/portalSettings";
+import {
+  maskImageForShape,
+  PORTAL_RING_FADE_OUT_MS,
+  ringStartForCenterPercent,
+  staggerMsForExpandSec,
+} from "@/lib/portalSettings";
 
 /** 포인터 정규화용 가상 화면 배율(>1). 클수록 같은 손/마우스 이동에 목표 변화가 완만해짐 */
 const POINTER_VIRTUAL_SCALE = 2.05;
@@ -25,12 +22,15 @@ const POINTER_SETTLE_EPS = 0.012;
 
 type RingItem = { id: number; exiting: boolean };
 
-type PortalTunnelProps = {
+export type PortalTunnelProps = {
   imageSrc: string;
   imageAlt: string;
+  ringExpandSec: number;
+  centerSizePercent: number;
+  maskShape: PortalMaskShape;
 };
 
-function useRingEndScale() {
+function useRingEndScale(ringStart: number) {
   const portalRef = useRef<HTMLDivElement>(null);
   const [ringEnd, setRingEnd] = useState(2.15);
 
@@ -47,7 +47,7 @@ function useRingEndScale() {
       const vh = window.innerHeight;
       const diagonal = Math.hypot(vw, vh);
       const raw = diagonal / side;
-      const next = Math.max(raw * 1.002, RING_START + 0.02);
+      const next = Math.max(raw * 1.002, ringStart + 0.02);
       setRingEnd(next);
     };
 
@@ -68,13 +68,29 @@ function useRingEndScale() {
       ro.disconnect();
       window.removeEventListener("resize", scheduleUpdate);
     };
-  }, []);
+  }, [ringStart]);
 
   return { portalRef, ringEnd };
 }
 
-export function PortalTunnel({ imageSrc, imageAlt }: PortalTunnelProps) {
-  const { portalRef, ringEnd } = useRingEndScale();
+export function PortalTunnel({
+  imageSrc,
+  imageAlt,
+  ringExpandSec,
+  centerSizePercent,
+  maskShape,
+}: PortalTunnelProps) {
+  const ringStart = useMemo(
+    () => ringStartForCenterPercent(centerSizePercent),
+    [centerSizePercent],
+  );
+  const ringStaggerMs = useMemo(
+    () => staggerMsForExpandSec(ringExpandSec),
+    [ringExpandSec],
+  );
+  const maskCss = useMemo(() => maskImageForShape(maskShape), [maskShape]);
+
+  const { portalRef, ringEnd } = useRingEndScale(ringStart);
   const tunnelRootRef = useRef<HTMLDivElement>(null);
   const bundleRef = useRef<HTMLDivElement>(null);
   const rawOffsetRef = useRef({ x: 0, y: 0 });
@@ -93,12 +109,12 @@ export function PortalTunnel({ imageSrc, imageAlt }: PortalTunnelProps) {
         setRings((prev) =>
           prev.map((r) => (r.id === rid ? { ...r, exiting: true } : r)),
         );
-      }, RING_EXPAND_SEC * 1000);
+      }, ringExpandSec * 1000);
 
       const tRemove = window.setTimeout(() => {
         timeoutsSet.delete(tRemove);
         setRings((prev) => prev.filter((r) => r.id !== rid));
-      }, RING_EXPAND_SEC * 1000 + RING_FADE_OUT_MS);
+      }, ringExpandSec * 1000 + PORTAL_RING_FADE_OUT_MS);
 
       timeoutsSet.add(tFade);
       timeoutsSet.add(tRemove);
@@ -114,7 +130,7 @@ export function PortalTunnel({ imageSrc, imageAlt }: PortalTunnelProps) {
         const newId = nextIdRef.current;
         setRings((prev) => [...prev, { id: newId, exiting: false }]);
         scheduleRemoval(newId);
-      }, RING_STAGGER_MS);
+      }, ringStaggerMs);
     };
     const stopStagger = () => {
       if (staggerId === null) return;
@@ -136,7 +152,7 @@ export function PortalTunnel({ imageSrc, imageAlt }: PortalTunnelProps) {
       Array.from(timeoutsSet).forEach((tid) => window.clearTimeout(tid));
       timeoutsSet.clear();
     };
-  }, []);
+  }, [ringExpandSec, ringStaggerMs]);
 
   /** 유동 보간: 포인터 활동이 있을 때만 rAF. 탭 비가시 시 링 애니 일시정지 + 루프 중단. */
   useEffect(() => {
@@ -287,10 +303,13 @@ export function PortalTunnel({ imageSrc, imageAlt }: PortalTunnelProps) {
   }, []);
 
   const portalVars = {
-    "--portal-ring-start": String(RING_START),
+    "--portal-ring-start": String(ringStart),
     "--portal-ring-end": String(ringEnd),
-    "--portal-fade-ms": `${RING_FADE_OUT_MS}ms`,
+    "--portal-fade-ms": `${PORTAL_RING_FADE_OUT_MS}ms`,
+    "--portal-mask-center": maskCss,
   } as React.CSSProperties;
+
+  const expandDuration = `${ringExpandSec}s`;
 
   return (
     <div ref={tunnelRootRef} className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -299,7 +318,6 @@ export function PortalTunnel({ imageSrc, imageAlt }: PortalTunnelProps) {
         className="absolute inset-0"
         style={{ transform: "translate3d(0,0,0)" }}
       >
-        {/* 배경 스머지 — 레퍼런스처럼 바깥 질감 */}
         <div
           className="absolute inset-[-18%] scale-[1.12] opacity-[0.92]"
           style={{
@@ -318,48 +336,53 @@ export function PortalTunnel({ imageSrc, imageAlt }: PortalTunnelProps) {
             className="relative aspect-square w-[min(94vmin,760px)] max-h-[88dvh] touch-none"
             style={portalVars}
           >
-          {rings.map((ring, idx) => (
-            <div
-              key={ring.id}
-              className={`portal-ring-layer portal-mask-disc absolute inset-0 flex origin-center items-center justify-center will-change-[transform,opacity] ${
-                ring.exiting ? "portal-ring-exiting" : ""
-              }`}
-              style={{
-                zIndex: idx + 1,
-                ...(ring.exiting
-                  ? {}
-                  : {
-                      animation: `portal-ring ${RING_EXPAND_SEC}s forwards`,
-                      animationFillMode: "both" as const,
-                    }),
-              }}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element -- blob URLs and user uploads */}
-              <img
-                src={imageSrc}
-                alt=""
-                decoding="async"
-                draggable={false}
-                className="h-full w-full select-none object-cover"
-              />
-            </div>
-          ))}
+            {rings.map((ring, idx) => (
+              <div
+                key={ring.id}
+                className={`portal-ring-layer portal-mask-disc absolute inset-0 flex origin-center items-center justify-center will-change-[transform,opacity] ${
+                  ring.exiting ? "portal-ring-exiting" : ""
+                }`}
+                style={{
+                  zIndex: idx + 1,
+                  ...(ring.exiting
+                    ? {}
+                    : {
+                        animation: `portal-ring ${expandDuration} forwards`,
+                        animationFillMode: "both" as const,
+                      }),
+                }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element -- blob URLs and user uploads */}
+                <img
+                  src={imageSrc}
+                  alt=""
+                  decoding="async"
+                  draggable={false}
+                  className="h-full w-full select-none object-cover"
+                />
+              </div>
+            ))}
 
-          {/* 링 레이어 zIndex가 커져도 항상 위에 — 확장층(idx+1) 최대보다 충분히 큼 */}
-          <div className="absolute inset-0 z-[1000] flex items-center justify-center">
-            <div className="portal-mask-center aspect-square w-[30%] max-w-[30%]">
-              {/* eslint-disable-next-line @next/next/no-img-element -- blob URLs and user uploads */}
-              <img
-                src={imageSrc}
-                alt={imageAlt}
-                decoding="async"
-                draggable={false}
-                className="h-full w-full select-none object-cover"
-              />
+            <div className="absolute inset-0 z-[1000] flex items-center justify-center">
+              <div
+                className="portal-mask-center aspect-square shrink-0"
+                style={{
+                  width: `${centerSizePercent}%`,
+                  maxWidth: `${centerSizePercent}%`,
+                }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element -- blob URLs and user uploads */}
+                <img
+                  src={imageSrc}
+                  alt={imageAlt}
+                  decoding="async"
+                  draggable={false}
+                  className="h-full w-full select-none object-cover"
+                />
+              </div>
             </div>
           </div>
         </div>
-      </div>
       </div>
     </div>
   );
