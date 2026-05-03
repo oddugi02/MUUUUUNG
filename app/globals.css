@@ -40,6 +40,27 @@
   animation-play-state: paused !important;
 }
 
+/* 백그라운드 탭: 풀스크린 블러 합성 제거(발열·전력 큰 요인) */
+.portal-tunnel-paused .portal-bg-smear {
+  visibility: hidden;
+}
+
+/* 터널 루트: 리페인트·레이아웃 범위 제한 */
+.portal-tunnel-root {
+  contain: layout paint;
+}
+
+/* 배경 스머지 — 52px 블러는 모바일·저전력 기기에서 발열 유발, 시각은 거의 동일 선에서 완화 */
+.portal-bg-smear {
+  filter: blur(34px) saturate(1.04);
+}
+
+@media (max-width: 768px) {
+  .portal-bg-smear {
+    filter: blur(24px) saturate(1.03);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .portal-ring-layer {
     animation: none !important;
@@ -97,6 +118,14 @@ body {
   mask-repeat: no-repeat;
   -webkit-mask-position: center;
   mask-position: center;
+}
+
+/* 하트: mask-image 대신 문서 내 clipPath — WebKit/Safari에서 SVG 마스크가 사각형으로 깨지는 문제 회피 */
+.portal-heart-clip {
+  -webkit-clip-path: url(#muuuuung-portal-heart-clip);
+  clip-path: url(#muuuuung-portal-heart-clip);
+  -webkit-mask-image: none !important;
+  mask-image: none !important;
 }
 
 /* Retro stepped / pixel-ish frame */

@@ -33,6 +33,24 @@ export const BGM_TRACKS: BgmTrack[] = [
     category: "불교",
     file: "/bgm/04-yeombool.wav",
   },
+  {
+    id: "interstellar",
+    title: "Interstellar — Main Theme (Hans Zimmer)",
+    category: "영화·OST",
+    file: "/bgm/05-interstellar.mp3",
+  },
+  {
+    id: "spring-rain",
+    title: "가벼운 봄비 · 자연음",
+    category: "자연·환경음",
+    file: "/bgm/06-spring-rain.mp3",
+  },
+  {
+    id: "nature-ambience",
+    title: "Nature ambience",
+    category: "자연·환경음",
+    file: "/bgm/07-nature-ambience.mp3",
+  },
 ];
 
 const STORAGE_KEY = "muuuuung-bgm-track";

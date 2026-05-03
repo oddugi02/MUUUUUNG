@@ -54,8 +54,8 @@ export function BgmModal({ open, selectedId, onSelect, onClose }: BgmModalProps)
         </div>
 
         <p className="border-b border-neutral-200 px-4 py-2.5 text-center text-[11px] text-neutral-600 sm:px-5">
-          곡을 고르면 반복 재생됩니다. 상단 <strong>스피커 버튼</strong>으로 소리를 끄면 BGM도 같이
-          멈춥니다.
+          곡을 고르면 반복 재생됩니다. <strong>재생 안 함</strong>을 고르면 음표 버튼이 회색·취소선으로
+          바뀌고, 다시 누르면 여기서 곡을 고를 수 있어요.
         </p>
 
         <div className="touch-pan-y flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">

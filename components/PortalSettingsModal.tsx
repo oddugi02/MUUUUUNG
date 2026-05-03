@@ -17,7 +17,7 @@ const TABS: { id: TabId; label: string }[] = [
   { id: "mask", label: "마스크" },
 ];
 
-const MASK_ORDER: PortalMaskShape[] = ["circle", "soft", "roundedSquare", "diamond"];
+const MASK_ORDER: PortalMaskShape[] = ["circle", "soft", "roundedSquare", "heart"];
 
 const RING_MIN = 6;
 const RING_MAX = 90;

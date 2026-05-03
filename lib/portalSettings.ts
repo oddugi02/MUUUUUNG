@@ -1,5 +1,5 @@
 /** 마스크 모양 — CSS mask 이미지로 표현 */
-export type PortalMaskShape = "circle" | "soft" | "roundedSquare" | "diamond";
+export type PortalMaskShape = "circle" | "soft" | "roundedSquare" | "heart";
 
 export type PortalSettings = {
   /** 한 디스크가 화면 끝까지 확장하는 데 걸리는 시간(초) — 작을수록 빠름 */
@@ -109,15 +109,9 @@ export function maskImageForShape(shape: PortalMaskShape): string {
       );
       return `url("data:image/svg+xml,${svg}")`;
     }
-    case "diamond": {
-      const svg = encodeURIComponent(
-        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none">' +
-          '<rect width="100" height="100" fill="%23000"/>' +
-          '<polygon points="50,14 88,50 50,86 12,50" fill="%23fff"/>' +
-          "</svg>",
-      );
-      return `url("data:image/svg+xml,${svg}")`;
-    }
+    case "heart":
+      /* 실제 렌더는 PortalTunnel에서 clip-path(SVG #id)로 처리 */
+      return maskImageForShape("circle");
     default:
       return maskImageForShape("circle");
   }
@@ -128,7 +122,8 @@ export function loadPortalSettings(): PortalSettings {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return { ...DEFAULT_PORTAL_SETTINGS };
-    const p = JSON.parse(raw) as Partial<PortalSettings>;
+    const p = JSON.parse(raw) as Record<string, unknown>;
+    const storedShape = p.maskShape;
     return {
       ringExpandSec: clamp(
         typeof p.ringExpandSec === "number" ? p.ringExpandSec : DEFAULT_PORTAL_SETTINGS.ringExpandSec,
@@ -142,13 +137,20 @@ export function loadPortalSettings(): PortalSettings {
         16,
         48,
       ),
-      maskShape:
-        p.maskShape === "soft" ||
-        p.maskShape === "roundedSquare" ||
-        p.maskShape === "diamond" ||
-        p.maskShape === "circle"
-          ? p.maskShape
-          : "circle",
+      maskShape: (() => {
+        const ms =
+          storedShape === "diamond"
+            ? "heart"
+            : typeof storedShape === "string"
+              ? storedShape
+              : undefined;
+        return ms === "soft" ||
+          ms === "roundedSquare" ||
+          ms === "heart" ||
+          ms === "circle"
+          ? ms
+          : "circle";
+      })(),
     };
   } catch {
     return { ...DEFAULT_PORTAL_SETTINGS };
@@ -166,7 +168,7 @@ export function savePortalSettings(s: PortalSettings): void {
 
 export const MASK_SHAPE_LABELS: Record<PortalMaskShape, string> = {
   circle: "원형",
-  soft: "부드러운 원",
-  roundedSquare: "둥근 사각",
-  diamond: "다이아몬드",
+  soft: "부드러운 다각형",
+  roundedSquare: "사각형",
+  heart: "하트",
 };

@@ -14,11 +14,11 @@ const POINTER_VIRTUAL_SCALE = 2.05;
 
 /** raw 포인터 → 1차 목표(저역 통과) — 고주파 떨림 제거 */
 const POINTER_LERP_STAGED = 0.19;
-/** 1차 목표 → 실제 transform — 최종 유동감 */
-const POINTER_LERP_VISUAL = 0.045;
+/** 1차 목표 → 실제 transform — 최종 유동감 (너무 낮으면 rAF가 오래 돌아 발열↑) */
+const POINTER_LERP_VISUAL = 0.072;
 
 /** 이 값 이하면 유동 오프셋이 정지한 것으로 보고 rAF 루프 중단 */
-const POINTER_SETTLE_EPS = 0.012;
+const POINTER_SETTLE_EPS = 0.018;
 
 type RingItem = { id: number; exiting: boolean };
 
@@ -88,7 +88,7 @@ export function PortalTunnel({
     () => staggerMsForExpandSec(ringExpandSec),
     [ringExpandSec],
   );
-  const maskCss = useMemo(() => maskImageForShape(maskShape), [maskShape]);
+  const isHeart = maskShape === "heart";
 
   const { portalRef, ringEnd } = useRingEndScale(ringStart);
   const tunnelRootRef = useRef<HTMLDivElement>(null);
@@ -306,25 +306,29 @@ export function PortalTunnel({
     "--portal-ring-start": String(ringStart),
     "--portal-ring-end": String(ringEnd),
     "--portal-fade-ms": `${PORTAL_RING_FADE_OUT_MS}ms`,
-    "--portal-mask-center": maskCss,
+    ...(isHeart
+      ? {}
+      : { "--portal-mask-center": maskImageForShape(maskShape) }),
   } as React.CSSProperties;
 
   const expandDuration = `${ringExpandSec}s`;
 
   return (
-    <div ref={tunnelRootRef} className="pointer-events-none absolute inset-0 overflow-hidden">
+    <div
+      ref={tunnelRootRef}
+      className="portal-tunnel-root pointer-events-none absolute inset-0 overflow-hidden"
+    >
       <div
         ref={bundleRef}
         className="absolute inset-0"
         style={{ transform: "translate3d(0,0,0)" }}
       >
         <div
-          className="absolute inset-[-18%] scale-[1.12] opacity-[0.92]"
+          className="portal-bg-smear absolute inset-[-18%] scale-[1.12] opacity-[0.92]"
           style={{
             backgroundImage: `url(${imageSrc})`,
             backgroundSize: "cover",
             backgroundPosition: "center",
-            filter: "blur(52px) saturate(1.06)",
             transform: "rotate(1.5deg)",
           }}
           aria-hidden
@@ -336,12 +340,24 @@ export function PortalTunnel({
             className="relative aspect-square w-[min(94vmin,760px)] max-h-[88dvh] touch-none"
             style={portalVars}
           >
+            <svg
+              width={0}
+              height={0}
+              className="pointer-events-none absolute"
+              aria-hidden
+            >
+              <defs>
+                <clipPath id="muuuuung-portal-heart-clip" clipPathUnits="objectBoundingBox">
+                  <path d="M0.5,0.9 C0.33,0.73 0.18,0.57 0.18,0.41 C0.18,0.28 0.28,0.17 0.41,0.17 C0.46,0.17 0.49,0.21 0.5,0.26 C0.51,0.21 0.54,0.17 0.59,0.17 C0.72,0.17 0.82,0.28 0.82,0.41 C0.82,0.57 0.67,0.73 0.5,0.9 Z" />
+                </clipPath>
+              </defs>
+            </svg>
             {rings.map((ring, idx) => (
               <div
                 key={ring.id}
-                className={`portal-ring-layer portal-mask-disc absolute inset-0 flex origin-center items-center justify-center will-change-[transform,opacity] ${
-                  ring.exiting ? "portal-ring-exiting" : ""
-                }`}
+                className={`portal-ring-layer absolute inset-0 flex origin-center items-center justify-center ${
+                  isHeart ? "portal-heart-clip" : "portal-mask-disc"
+                } ${ring.exiting ? "portal-ring-exiting" : ""}`}
                 style={{
                   zIndex: idx + 1,
                   ...(ring.exiting
@@ -365,7 +381,7 @@ export function PortalTunnel({
 
             <div className="absolute inset-0 z-[1000] flex items-center justify-center">
               <div
-                className="portal-mask-center aspect-square shrink-0"
+                className={`aspect-square shrink-0 ${isHeart ? "portal-heart-clip" : "portal-mask-center"}`}
                 style={{
                   width: `${centerSizePercent}%`,
                   maxWidth: `${centerSizePercent}%`,

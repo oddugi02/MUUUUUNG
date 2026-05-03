@@ -46,7 +46,6 @@ export function HomeClient() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [bgmOpen, setBgmOpen] = useState(false);
   const [bgmTrackId, setBgmTrackId] = useState("none");
-  const [soundEnabled, setSoundEnabled] = useState(true);
   const skipNextSettingsSave = useRef(true);
   const skipBgmSave = useRef(true);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -59,7 +58,7 @@ export function HomeClient() {
     setBgmTrackId(loadBgmTrackId());
   }, []);
 
-  useBgmPlayer(bgmTrackId, soundEnabled);
+  useBgmPlayer(bgmTrackId);
 
   useEffect(() => {
     if (skipNextSettingsSave.current) {
@@ -200,6 +199,7 @@ export function HomeClient() {
   }, [closeInfoModal]);
 
   const portalTunnelKey = `${displaySrc}-${portalSettings.ringExpandSec}-${portalSettings.centerSizePercent}-${portalSettings.maskShape}`;
+  const bgmPlaybackOff = bgmTrackId === "none";
 
   return (
     <main className="relative flex h-dvh min-h-0 flex-col overflow-hidden bg-neutral-300">
@@ -226,26 +226,24 @@ export function HomeClient() {
             </button>
             <button
               type="button"
-              onClick={() => setSoundEnabled((v) => !v)}
-              aria-label={soundEnabled ? "소리 끄기" : "소리 켜기"}
-              aria-pressed={soundEnabled}
-              title={soundEnabled ? "소리 끄기" : "소리 켜기"}
-              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-neutral-400/80 bg-neutral-100/95 text-neutral-800 shadow-md shadow-neutral-900/10 backdrop-blur-sm transition hover:bg-white active:scale-[0.98]"
-            >
-              {soundEnabled ? (
-                <VolumeOnGlyph className="h-5 w-5 shrink-0" aria-hidden />
-              ) : (
-                <VolumeOffGlyph className="h-5 w-5 shrink-0" aria-hidden />
-              )}
-            </button>
-            <button
-              type="button"
               onClick={() => setBgmOpen(true)}
-              aria-label="BGM 선택"
-              title="BGM 선택"
-              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-neutral-400/80 bg-neutral-100/95 text-neutral-800 shadow-md shadow-neutral-900/10 backdrop-blur-sm transition hover:bg-white active:scale-[0.98]"
+              aria-label={bgmPlaybackOff ? "BGM 선택 — 현재 재생 안 함" : "BGM 선택"}
+              title={bgmPlaybackOff ? "BGM 선택 (재생 안 함)" : "BGM 선택"}
+              className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border shadow-md backdrop-blur-sm transition active:scale-[0.98] ${
+                bgmPlaybackOff
+                  ? "border-neutral-400/70 bg-neutral-200/95 text-neutral-500 shadow-neutral-900/5 hover:bg-neutral-200"
+                  : "border-neutral-400/80 bg-neutral-100/95 text-neutral-800 shadow-neutral-900/10 hover:bg-white"
+              }`}
             >
-              <MusicNoteGlyph className="h-5 w-5 shrink-0" aria-hidden />
+              <span className="relative inline-flex h-5 w-5 items-center justify-center">
+                <MusicNoteGlyph className="h-5 w-5 shrink-0" aria-hidden />
+                {bgmPlaybackOff ? (
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute left-1/2 top-1/2 h-0.5 w-[130%] -translate-x-1/2 -translate-y-1/2 -rotate-45 rounded-full bg-current opacity-95"
+                  />
+                ) : null}
+              </span>
             </button>
           </div>
           <button
@@ -558,40 +556,3 @@ function BackArrowGlyph({ className }: { className?: string }) {
   );
 }
 
-function VolumeOnGlyph({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
-      <path d="M11 5 6 9H3v6h3l5 4V5Z" />
-      <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-      <path d="M17.66 6.34a8 8 0 0 1 0 11.32" />
-    </svg>
-  );
-}
-
-function VolumeOffGlyph({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
-      <path d="M11 5 6 9H3v6h3l5 4V5Z" />
-      <line x1="17" x2="21" y1="9" y2="15" />
-      <line x1="21" x2="17" y1="9" y2="15" />
-    </svg>
-  );
-}
